@@ -1,0 +1,49 @@
+{
+  "target": "median dissolved/total Y >= 1.0 ug/L",
+  "features": [
+    "ph",
+    "log_sulfate",
+    "log_al",
+    "log_fe",
+    "log_mn",
+    "log_sc"
+  ],
+  "spatial_cv": {
+    "n_sites": 386,
+    "n_elevated": 227,
+    "n_watersheds": 30,
+    "model_auc": 0.962,
+    "baseline_auc": 0.917
+  },
+  "magnitude_spatial_cv": {
+    "n_sites": 377,
+    "r2_log10": 0.849,
+    "mae_log10": 0.305,
+    "spearman_model": 0.924,
+    "spearman_baseline_low_ph": 0.845
+  },
+  "ky_transfer_test": {
+    "n_sites": 9,
+    "n_elevated": 8,
+    "model_auc": 1.0,
+    "baseline_auc": 0.625
+  },
+  "anthracite_sensitivity": {
+    "n_training_sites_without_anthracite": 253,
+    "spatial_cv_auc_without_anthracite": 0.983,
+    "ky_rank_correlation_with_vs_without": 0.762,
+    "ky_high_sites_still_high_without_anthracite": "76/82"
+  },
+  "mean_abs_shap": {
+    "ph": 1.614,
+    "log_sulfate": 0.912,
+    "log_al": 2.198,
+    "log_fe": 0.495,
+    "log_mn": 0.776,
+    "log_sc": 0.18
+  },
+  "ky_sites_scored": 3756,
+  "ky_surface_sites_p_over_0.5": 146,
+  "ky_shortlist_candidates": 66,
+  "ky_shortlist_candidates_sampled_since_1990": 37
+}

@@ -55,6 +55,29 @@ python -m ky_ree.check_setup
 
 To use the LLM features, copy `.env.example` to `.env` and add your Anthropic API key. `.env` is git-ignored and never committed.
 
+### Run the pipeline
+
+```bash
+python -m ky_ree.download_papers      # Phase 1: reports
+python -m ky_ree.extract --all        # Phase 1: Claude extraction (~$3)
+python -m ky_ree.verify_extractions   # Phase 1: check values against PDFs
+python -m ky_ree.wqp                  # Phase 2: Water Quality Portal downloads
+python -m ky_ree.build_dataset        # Phase 2: clean site tables
+python -m ky_ree.mines Pike Floyd     # Mine footprints
+python -m ky_ree.upstream Pike Floyd  # % of each watershed mined
+python -m ky_ree.model                # Phase 3: train, validate, rank
+python -m ky_ree.export_app_data      # Phase 4: small files for the dashboard
+```
+
+### Run the dashboard
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Interactive map of every scored Kentucky coal-field site (filter by county, tier, recency),
+mined-out areas for Pike & Floyd, a downloadable field-sampling shortlist, and model diagnostics.
+
 ## Data sources
 
 - [USGS: Coal mine drainage effluents and solids, REE data (PA, 2024)](https://www.usgs.gov/data/coal-mine-drainage-effluents-and-associated-solids-major-trace-rare-earth-element-and-radium)

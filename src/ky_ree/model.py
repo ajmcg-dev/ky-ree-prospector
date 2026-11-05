@@ -153,6 +153,27 @@ def out_of_range(train: pd.DataFrame, df: pd.DataFrame) -> pd.Series:
     return outside.sum(axis=1)
 
 
+def explain_sites(explainer, X: pd.DataFrame, train_X: pd.DataFrame, top: int = 2) -> pd.Series:
+    """Plain-language reason for each site's score, from its SHAP values:
+    e.g. 'high aluminum (+), low pH (+)'. (+) pushes toward elevated REE."""
+    values = explainer(X).values
+    medians = train_X.median()
+    names = {"ph": "pH", "log_sulfate": "sulfate", "log_al": "aluminum", "log_fe": "iron",
+             "log_mn": "manganese", "log_sc": "conductivity"}
+    out = []
+    for row_vals, (_, row) in zip(values, X.iterrows()):
+        order = np.argsort(-np.abs(row_vals))[:top]
+        parts = []
+        for j in order:
+            f = X.columns[j]
+            if pd.isna(row[f]) or abs(row_vals[j]) < 0.1:
+                continue
+            level = "high" if row[f] > medians[f] else "low"
+            parts.append(f"{level} {names[f]} ({'+' if row_vals[j] > 0 else '-'})")
+        out.append(", ".join(parts) or "no strong signal")
+    return pd.Series(out, index=X.index)
+
+
 def plot_pred_vs_obs(y, pred, path) -> None:
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.scatter(10 ** y, 10 ** pred, s=10, alpha=0.6)
@@ -243,6 +264,7 @@ def main() -> int:
     ky["p_bituminous_only"] = model_bit.predict_proba(ky[FEATURES])[:, 1].round(3)
     ky["n_features"] = ky[FEATURES].notna().sum(axis=1)
     ky["n_out_of_range"] = out_of_range(train, ky)
+    ky["drivers"] = explain_sites(explainer, ky[FEATURES], train[FEATURES])
     ky["surface_water"] = ky["site_type"].isin(SURFACE_WATER)
     ky["stale"] = ky["last_year"] < STALE_BEFORE
     sensitivity = {

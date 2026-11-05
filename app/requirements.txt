@@ -1,0 +1,7 @@
+# Dashboard-only dependencies (used by Streamlit Community Cloud).
+# The full pipeline's dependencies are in the repo-root requirements.txt.
+streamlit>=1.40
+streamlit-folium
+folium
+pandas
+numpy
