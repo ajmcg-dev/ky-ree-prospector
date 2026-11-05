@@ -13,7 +13,15 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [ ] Collect ~20–40 public reports/papers (USGS, EPA, KGS, UKy, DOE/NETL) into `data/raw/papers/`. 5 so far (`data/papers_manifest.csv`)
 - [x] Define the extraction schema (`src/ky_ree/schema.py`)
 - [x] Claude API extraction with structured output (`src/ky_ree/extract.py`), first test on vass2019_part2: $0.46, values spot-checked against PDF
-- [ ] Finding: vass2019_part2 has only basin-level averages, no individual sites, no KY sites. Need site-level and KY sources.
+- [x] Ran all 5 papers: 61 sample groups, 909 REE values, total API spend $2.86
+- [x] Automated check (`verify_extractions.py`): 909/909 values found in source PDFs (one needed a manual look: a broken "0. 07" in the PDF text, which Claude read correctly)
+- [ ] Hand-check ~30 random values for correct element/site attribution
+- Findings:
+  - Most papers print only summaries; Vass Part 2 has basin averages only, no KY sites.
+  - Cravotta 2008: per-site data for all 140 PA sites is in USGS NWIS → pull in Phase 2.
+  - Vass Part 1: 10 WV/PA sites with per-site means (water + precipitate).
+  - Only KY data so far: one western KY coal-refuse AMD (TREE 6.6 ppm), not eastern KY creeks.
+  - Several papers print major ions in ppm; currently left null (ppm ≈ mg/L for dilute water; decide in Phase 2).
 - [ ] Hand-check a sample and report extraction accuracy
 - [ ] Budget: keep total API spend under ~$20
 
