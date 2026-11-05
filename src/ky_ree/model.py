@@ -35,8 +35,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
-from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, r2_score, roc_auc_score, roc_curve
 from sklearn.model_selection import GroupKFold
 
 from ky_ree import config
@@ -51,6 +51,10 @@ SURFACE_WATER = ["Stream", "River/Stream", "River/Stream Perennial", "Mine/Mine 
                  "Spring", "Lake, Reservoir, Impoundment", "Pond", "River/Stream Intermittent"]
 SEED = 42
 REPORTS = config.ROOT / "reports"
+# PA counties in the anthracite fields. Eastern KY is bituminous coal, so we
+# check whether these sites change the model.
+ANTHRACITE_PA_COUNTIES = [107, 79, 69, 97, 25, 37, 43]
+STALE_BEFORE = 1990  # sites last sampled earlier are flagged as stale
 
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -110,6 +114,58 @@ def spatial_cv(train: pd.DataFrame) -> dict:
     }
 
 
+def site_log_y() -> pd.Series:
+    """Median log10 of detected Y per site: the 'how much' target."""
+    long = pd.read_csv(config.INTERIM_DIR / "ree_water_long.csv")
+    y = long[(long["element"] == "Y") & long["detected"] & (long["value_ug_l"] > 0)]
+    return np.log10(y.groupby("site_id")["value_ug_l"].median()).rename("log_y")
+
+
+def make_regressor() -> HistGradientBoostingRegressor:
+    return HistGradientBoostingRegressor(
+        max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=15,
+        l2_regularization=1.0, random_state=SEED,
+    )
+
+
+def regression_cv(train: pd.DataFrame) -> dict:
+    """How well can we predict HOW MUCH yttrium, on held-out watersheds?"""
+    X, y, groups = train[FEATURES], train["log_y"], train["huc8"]
+    oof = pd.Series(np.nan, index=train.index)
+    for tr, te in GroupKFold(n_splits=5).split(X, y, groups):
+        oof.iloc[te] = make_regressor().fit(X.iloc[tr], y.iloc[tr]).predict(X.iloc[te])
+    with_ph = train["ph"].notna()
+    return {
+        "n_sites": int(len(train)),
+        "r2_log10": round(r2_score(y, oof), 3),
+        "mae_log10": round(mean_absolute_error(y, oof), 3),  # 0.3 ~ within a factor of 2
+        "spearman_model": round(oof.rank().corr(y.rank()), 3),
+        "spearman_baseline_low_ph": round((-train.loc[with_ph, "ph"]).rank().corr(y[with_ph].rank()), 3),
+        "_oof": oof,
+    }
+
+
+def out_of_range(train: pd.DataFrame, df: pd.DataFrame) -> pd.Series:
+    """How many of a site's features fall outside the training data's 1st-99th
+    percentile. Predictions there are extrapolations and less trustworthy."""
+    lo, hi = train[FEATURES].quantile(0.01), train[FEATURES].quantile(0.99)
+    outside = (df[FEATURES] < lo) | (df[FEATURES] > hi)
+    return outside.sum(axis=1)
+
+
+def plot_pred_vs_obs(y, pred, path) -> None:
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.scatter(10 ** y, 10 ** pred, s=10, alpha=0.6)
+    lims = [10 ** min(y.min(), pred.min()), 10 ** max(y.max(), pred.max())]
+    ax.plot(lims, lims, "k:", lw=1, label="perfect prediction")
+    ax.set(xscale="log", yscale="log", xlabel="Measured Y (ug/L)", ylabel="Predicted Y (ug/L)",
+           title="Yttrium on held-out watersheds")
+    ax.legend(loc="upper left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
 def plot_roc(y, curves: dict, path, title: str) -> None:
     fig, ax = plt.subplots(figsize=(5, 5))
     for name, score in curves.items():
@@ -164,31 +220,78 @@ def main() -> int:
     plt.close("all")
     importance = dict(zip(FEATURES, np.abs(sv.values).mean(axis=0).round(3).tolist()))
 
-    # 4. Score every Kentucky coal-field site.
+    # 4. Magnitude model: how much Y, trained on sites where Y was detected.
+    reg_data = sites.join(site_log_y(), how="inner")
+    reg_data = reg_data[reg_data[FEATURES].notna().any(axis=1)]
+    reg_train = reg_data[reg_data["state"] != "KY"]
+    rcv = regression_cv(reg_train)
+    print(f"Magnitude model, spatial CV: R2 {rcv['r2_log10']}, MAE {rcv['mae_log10']} log10 units, "
+          f"Spearman {rcv['spearman_model']} vs low-pH baseline {rcv['spearman_baseline_low_ph']}")
+    plot_pred_vs_obs(reg_train["log_y"], rcv["_oof"], REPORTS / "figures" / "pred_vs_obs_y.png")
+    regressor = make_regressor().fit(reg_train[FEATURES], reg_train["log_y"])
+
+    # 5. Sensitivity: does dropping PA anthracite sites change the Kentucky ranking?
+    bituminous = ~((train["state"] == "PA") & train["county_fips"].isin(ANTHRACITE_PA_COUNTIES))
+    cv_bit = spatial_cv(train[bituminous])
+    model_bit = make_model().fit(train.loc[bituminous, FEATURES], train.loc[bituminous, "elevated_y"])
+
+    # 6. Score every Kentucky coal-field site.
     ky = add_features(pd.read_csv(config.PROCESSED_DIR / "ky_sites.csv", index_col="site_id"))
     ky = ky[ky[FEATURES].notna().any(axis=1)].copy()
     ky["p_elevated_ree"] = model.predict_proba(ky[FEATURES])[:, 1].round(3)
+    ky["pred_y_ug_l"] = (10 ** regressor.predict(ky[FEATURES])).round(2)
+    ky["p_bituminous_only"] = model_bit.predict_proba(ky[FEATURES])[:, 1].round(3)
     ky["n_features"] = ky[FEATURES].notna().sum(axis=1)
+    ky["n_out_of_range"] = out_of_range(train, ky)
     ky["surface_water"] = ky["site_type"].isin(SURFACE_WATER)
-    ky = ky.sort_values("p_elevated_ree", ascending=False)
+    ky["stale"] = ky["last_year"] < STALE_BEFORE
+    sensitivity = {
+        "n_training_sites_without_anthracite": int(bituminous.sum()),
+        "spatial_cv_auc_without_anthracite": cv_bit["model_auc"],
+        "ky_rank_correlation_with_vs_without": round(float(ky["p_elevated_ree"].rank().corr(ky["p_bituminous_only"].rank())), 3),
+    }
+    hi = ky["surface_water"] & (ky["p_elevated_ree"] >= 0.8)
+    sensitivity["ky_high_sites_still_high_without_anthracite"] = f"{int((ky.loc[hi, 'p_bituminous_only'] >= 0.8).sum())}/{int(hi.sum())}"
+    print(f"Anthracite sensitivity: {sensitivity}")
+
+    # Ranking: group into likelihood tiers (0.998 vs 0.999 is not a real
+    # difference), then rank by predicted amount within each tier.
+    ky["tier"] = pd.cut(ky["p_elevated_ree"], [-0.01, 0.5, 0.8, 0.95, 1.0],
+                        labels=["4 unlikely", "3 possible", "2 likely", "1 very likely"])
+    ky = ky.sort_values(["tier", "pred_y_ug_l"], ascending=False)
+    ky["rank"] = np.arange(1, len(ky) + 1)
     ky.to_csv(config.PROCESSED_DIR / "ky_ranked.csv")
 
-    cols = ["site_name", "coal_field", "county_fips", "site_type", "lat", "lon", "p_elevated_ree",
-            "ph", "sulfate_mg_l", "al_ug_l", "n_features", "last_year", "Y_ug_l"]
-    top = ky[ky["surface_water"]].head(25)[cols]
-    top.to_csv(REPORTS / "ky_top_creeks.csv")
+    # 7. Field shortlist: surface water, likely elevated, trustworthy inputs.
+    # Several site IDs can be the same spot (different agencies), so merge
+    # sites within ~100 m (3 decimal places of lat/lon).
+    cand = ky[ky["surface_water"] & (ky["p_elevated_ree"] >= 0.8)
+              & (ky["n_features"] >= 3) & (ky["n_out_of_range"] <= 1)].copy()
+    cand["spot"] = cand["lat"].round(3).astype(str) + "," + cand["lon"].round(3).astype(str)
+    cand = cand.drop_duplicates("spot")
+    cols = ["rank", "site_name", "coal_field", "county_fips", "site_type", "lat", "lon",
+            "tier", "p_elevated_ree", "pred_y_ug_l", "ph", "sulfate_mg_l", "al_ug_l", "n_features",
+            "n_out_of_range", "last_year", "stale", "Y_ug_l"]
+    cand[cols].head(25).to_csv(REPORTS / "ky_top_creeks.csv")
+    recent = cand[~cand["stale"]]
+    recent[cols].head(15).to_csv(REPORTS / "ky_field_shortlist_recent.csv")
 
     metrics = {
         "target": f"median dissolved/total Y >= {THRESHOLD_UG_L} ug/L",
         "features": FEATURES,
         "spatial_cv": {k: v for k, v in cv.items() if not k.startswith("_")},
+        "magnitude_spatial_cv": {k: v for k, v in rcv.items() if not k.startswith("_")},
         "ky_transfer_test": transfer,
+        "anthracite_sensitivity": sensitivity,
         "mean_abs_shap": importance,
         "ky_sites_scored": int(len(ky)),
         "ky_surface_sites_p_over_0.5": int((ky["surface_water"] & (ky["p_elevated_ree"] > 0.5)).sum()),
+        "ky_shortlist_candidates": int(len(cand)),
+        "ky_shortlist_candidates_sampled_since_1990": int(len(recent)),
     }
     (REPORTS / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-    print(json.dumps({k: metrics[k] for k in ("mean_abs_shap", "ky_sites_scored", "ky_surface_sites_p_over_0.5")}, indent=2))
+    print(json.dumps({k: metrics[k] for k in ("ky_sites_scored", "ky_surface_sites_p_over_0.5",
+                                              "ky_shortlist_candidates", "ky_shortlist_candidates_sampled_since_1990")}, indent=2))
     print(f"Top creeks -> {(REPORTS / 'ky_top_creeks.csv').relative_to(config.ROOT)}")
     return 0
 

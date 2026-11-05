@@ -58,10 +58,14 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [x] SHAP: aluminum is the top driver, then pH, sulfate (figures in `reports/figures/`)
 - [x] Ranked list: `data/processed/ky_ranked.csv`, top 25 surface-water sites in `reports/ky_top_creeks.csv`
 - [x] Data fix: pH filter tightened to 1.5–12.5 (pH 0.0 placeholders had created 19 fake "acidic" KY sites)
-- [ ] Probabilities saturate at 1.0 for many sites → add a regression on log10 Y (magnitude) to rank within the top tier
-- [ ] Training is PA-heavy (anthracite + bituminous); try coal-type / state as a check, or drop anthracite sites
-- [ ] Uncertainty: flag KY sites whose chemistry is outside the training range
-- [ ] Ranking for field work should weigh recency (many top sites last sampled 1965–1975)
+- [x] Magnitude model (log10 Y regression), spatial CV: R² 0.85, MAE 0.31 log10 (~factor of 2), Spearman 0.92 vs 0.85 baseline
+      KY check: Knott/Floyd predictions within ~2x of measured (e.g. RFBC10A 6.4 vs 6.2 µg/L). Red River site (18.6 measured vs 1.6 predicted) remains an outlier
+- [x] Ranking = likelihood tier (very likely ≥0.95 / likely / possible / unlikely), then predicted Y within tier
+- [x] Anthracite sensitivity: dropping 133 anthracite sites → CV AUC 0.98; 76/82 high-probability KY sites stay high. Kept anthracite; bituminous-only score saved as a column
+- [x] Out-of-range flag: 3,128 KY sites fully inside training range, 542 with 1 feature outside, 86 with 2+
+- [x] Field shortlist (`reports/ky_field_shortlist_recent.csv`): surface water, p ≥ 0.8, ≥3 measurements, ≤1 out-of-range, sampled 1990+, merged duplicates within ~100 m. 37 candidates
+  - Dominated by McCreary Co. mine drainage near Blue Heron (1995–97). NOTE: Blue Heron is inside Big South Fork NRRA (National Park Service), so sampling needs an NPS research permit
+  - Other recent: Cypress Creek & Beech Creek (Muhlenberg, 2009–13), Harlan 3MAR10026 (2009), Knott/Floyd FMB, SAB, RFBC (2013–14)
 
 ## Phase 4: Dashboard (weeks 7–8)
 - [ ] Streamlit + Folium map of ranked creeks
