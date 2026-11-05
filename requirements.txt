@@ -1,0 +1,26 @@
+# Core data
+pandas
+numpy
+requests
+python-dotenv
+
+# Geospatial
+geopandas
+shapely
+
+# Machine learning
+scikit-learn
+shap
+
+# LLM
+anthropic
+
+# Visualization + dashboard
+matplotlib
+folium
+streamlit
+streamlit-folium
+
+# Notebooks + testing
+jupyter
+pytest
