@@ -1,8 +1,23 @@
 # KY REE Prospector
 
+[![Open the live dashboard](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://ky-ree-prospector.streamlit.app/)
+
 **Ranking Kentucky's acid-mine-drainage streams by rare earth element (REE) potential, using machine learning, LLM-based literature mining, and field validation.**
 
-> 🚧 Work in progress. See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
+**▶ Live dashboard: [ky-ree-prospector.streamlit.app](https://ky-ree-prospector.streamlit.app/)**
+
+## Results so far
+
+| | |
+|---|---|
+| Literature mining | Claude API extracted 909 REE values from 5 reports; **909/909 traced to the source PDFs** (~$3 total) |
+| Training data | 17,336 REE water results from the Water Quality Portal → 386 labeled sites across 6 states |
+| Classifier | **AUC 0.96** on held-out watersheds (spatial CV) vs 0.92 for a low-pH baseline |
+| Magnitude model | **R² 0.85** (log10 yttrium) on held-out watersheds; Kentucky checks within ~2× of measured |
+| Scored | 3,756 Kentucky coal-field water sites; 37-site field shortlist sampled since 1990 |
+| Mining context | 2,243 historical mines (300,000 acres) in Pike & Floyd; % of each creek's watershed mined |
+
+> 🚧 Work in progress: field validation (Phase 5) is next. See [docs/PLAN.md](docs/PLAN.md).
 
 ## The question
 

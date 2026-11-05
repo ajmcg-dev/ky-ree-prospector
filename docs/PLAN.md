@@ -85,7 +85,7 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [x] Site popups: tier, probability, predicted Y, plain-language SHAP reason, chemistry, % basin mined, staleness
 - [x] Mined-out areas layer (Pike & Floyd), field shortlist tab with CSV download, model tab, limitations tab
 - [ ] "Ask the reports" assistant over Phase 1 data
-- [ ] Deploy to Streamlit Community Cloud (needs your GitHub sign-in at share.streamlit.io)
+- [x] Deployed: https://ky-ree-prospector.streamlit.app/ (auto-redeploys on push to main; repo made public)
 
 ## Phase 5: Field validation (weeks 8–11)
 - [ ] Choose ~3 top-ranked + ~2 low-ranked control creeks with public access or written permission
