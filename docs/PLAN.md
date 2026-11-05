@@ -48,11 +48,20 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [ ] One rerunnable script: raw → processed
 
 ## Phase 3: Scoring + ML (weeks 5–7)
-- [ ] Literature-based baseline score
-- [ ] ML model on labeled PA + KY sites (tag coal type: anthracite vs. bituminous)
-- [ ] Spatial cross-validation; "train on PA, test on KY" transfer experiment
-- [ ] SHAP explanations, uncertainty estimates
-- [ ] Ranked list of KY creeks
+- [x] Target: P(median Y >= 1 µg/L). Y tracks Nd (Spearman 0.96) and is the most-measured REE.
+      Non-detects count as "not elevated" only if detection limit <= 1 µg/L (censored data; no DL/2 substitution)
+- [x] Literature-based baseline score (low pH; sulfate fallback)
+- [x] HistGradientBoosting classifier on 6 chemistry features (`model.py`)
+- [x] Spatial CV (GroupKFold by HUC8, 30 watersheds, 386 sites): model AUC 0.96 vs baseline 0.92
+- [x] KY transfer test (train non-KY, test KY): 9 KY sites, 8 elevated. All 7 Knott/Floyd detections scored 0.68–0.99
+      even without pH. AUC 1.0 is NOT meaningful with only 1 negative site; need more KY labels (→ field sampling)
+- [x] SHAP: aluminum is the top driver, then pH, sulfate (figures in `reports/figures/`)
+- [x] Ranked list: `data/processed/ky_ranked.csv`, top 25 surface-water sites in `reports/ky_top_creeks.csv`
+- [x] Data fix: pH filter tightened to 1.5–12.5 (pH 0.0 placeholders had created 19 fake "acidic" KY sites)
+- [ ] Probabilities saturate at 1.0 for many sites → add a regression on log10 Y (magnitude) to rank within the top tier
+- [ ] Training is PA-heavy (anthracite + bituminous); try coal-type / state as a check, or drop anthracite sites
+- [ ] Uncertainty: flag KY sites whose chemistry is outside the training range
+- [ ] Ranking for field work should weigh recency (many top sites last sampled 1965–1975)
 
 ## Phase 4: Dashboard (weeks 7–8)
 - [ ] Streamlit + Folium map of ranked creeks

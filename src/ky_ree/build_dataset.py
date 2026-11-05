@@ -123,8 +123,9 @@ def site_chemistry(pattern: str = "chem_results_*.csv") -> pd.DataFrame:
             v = value[mask] * unit[mask].map(table)
         elif name == "Specific conductance":
             v = value[mask].where(unit[mask].isin(SC_UNITS))
-        else:  # pH: drop impossible values
-            v = value[mask].where(value[mask].between(0, 14))
+        else:  # pH: drop implausible values (0.0 is a common placeholder/typo;
+            # even severe acid mine drainage rarely goes below ~2)
+            v = value[mask].where(value[mask].between(1.5, 12.5))
         df = pd.DataFrame({"site_id": c.loc[mask, "MonitoringLocationIdentifier"], "v": v}).dropna()
         cols[col] = df.groupby("site_id")["v"].median()
         cols[f"{col}_n"] = df.groupby("site_id").size()

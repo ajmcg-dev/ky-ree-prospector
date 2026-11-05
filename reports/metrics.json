@@ -1,0 +1,34 @@
+{
+  "target": "median dissolved/total Y >= 1.0 ug/L",
+  "features": [
+    "ph",
+    "log_sulfate",
+    "log_al",
+    "log_fe",
+    "log_mn",
+    "log_sc"
+  ],
+  "spatial_cv": {
+    "n_sites": 386,
+    "n_elevated": 227,
+    "n_watersheds": 30,
+    "model_auc": 0.962,
+    "baseline_auc": 0.917
+  },
+  "ky_transfer_test": {
+    "n_sites": 9,
+    "n_elevated": 8,
+    "model_auc": 1.0,
+    "baseline_auc": 0.625
+  },
+  "mean_abs_shap": {
+    "ph": 1.614,
+    "log_sulfate": 0.912,
+    "log_al": 2.198,
+    "log_fe": 0.495,
+    "log_mn": 0.776,
+    "log_sc": 0.18
+  },
+  "ky_sites_scored": 3756,
+  "ky_surface_sites_p_over_0.5": 146
+}
