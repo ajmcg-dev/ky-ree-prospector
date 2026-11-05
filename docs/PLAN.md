@@ -84,7 +84,9 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [x] Streamlit + Folium map of ranked creeks (`app/streamlit_app.py`), tested in browser
 - [x] Site popups: tier, probability, predicted Y, plain-language SHAP reason, chemistry, % basin mined, staleness
 - [x] Mined-out areas layer (Pike & Floyd), field shortlist tab with CSV download, model tab, limitations tab
-- [ ] "Ask the reports" assistant over Phase 1 data
+- [x] "Ask the reports" chat (`app/chat.py`): Claude answers only from the extracted report data, cites paper/page/table
+  - Cost guards: access code, 10 questions/session, 100/day, prompt caching (first question ~$0.25, follow-ups ~$0.02)
+  - Tested: cited answers with unit conversions; declines out-of-scope questions (e.g. gold) instead of guessing
 - [x] Deployed: https://ky-ree-prospector.streamlit.app/ (auto-redeploys on push to main; repo made public)
 
 ## Phase 5: Field validation (weeks 8–11)

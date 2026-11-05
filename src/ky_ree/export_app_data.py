@@ -8,6 +8,7 @@ Streamlit Community Cloud without re-running the pipeline.
 """
 
 import glob
+import json
 import shutil
 import sys
 
@@ -77,6 +78,22 @@ def main() -> int:
         print(f"  {out.name}: {len(mines):,} mines, {out.stat().st_size / 1e6:.1f} MB")
 
     shutil.copy(config.ROOT / "reports" / "metrics.json", APP_DATA / "metrics.json")
+
+    # Report extractions for the "Ask the reports" chat: one compact JSON file
+    # with each paper's citation info plus the values Claude extracted from it.
+    manifest = pd.read_csv(config.DATA_DIR / "papers_manifest.csv").set_index("paper_id")
+    papers = []
+    for f in sorted((config.INTERIM_DIR / "extractions").glob("*.json")):
+        meta = manifest.loc[f.stem] if f.stem in manifest.index else {}
+        papers.append({
+            "paper_id": f.stem,
+            "url": meta.get("url") if len(meta) else None,
+            "year": None if not len(meta) or pd.isna(meta.get("year")) else int(meta["year"]),
+            **json.loads(f.read_text(encoding="utf-8")),
+        })
+    out = APP_DATA / "report_extractions.json"
+    out.write_text(json.dumps(papers, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
+    print(f"  {out.name}: {len(papers)} papers, {out.stat().st_size / 1e3:.0f} KB")
     print(f"  Wrote {APP_DATA.relative_to(config.ROOT)}")
     return 0
 

@@ -14,6 +14,8 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
+import chat
+
 APP_DIR = Path(__file__).parent
 DATA = APP_DIR / "data"
 FIGURES = APP_DIR.parent / "reports" / "figures"
@@ -161,7 +163,8 @@ c2.metric("Very likely", f"{(f['tier'] == '1 very likely').sum():,}")
 c3.metric("Model AUC (held-out watersheds)", f"{cv['model_auc']:.2f}", f"{cv['model_auc'] - cv['baseline_auc']:+.2f} vs pH-only")
 c4.metric("Magnitude R² (held-out)", f"{metrics['magnitude_spatial_cv']['r2_log10']:.2f}")
 
-tab_map, tab_list, tab_model, tab_about = st.tabs(["Map", "Field shortlist", "Model", "About"])
+tab_map, tab_list, tab_model, tab_chat, tab_about = st.tabs(
+    ["Map", "Field shortlist", "Model", "Ask the reports", "About"])
 
 with tab_map:
     legend = " ".join(
@@ -228,6 +231,9 @@ with tab_model:
     ]):
         if (FIGURES / name).exists():
             col.image(str(FIGURES / name), caption=cap, width="stretch")
+
+with tab_chat:
+    chat.render()
 
 with tab_about:
     st.markdown("""
