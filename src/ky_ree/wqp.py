@@ -35,6 +35,19 @@ CHEMISTRY_NAMES = [
     "pH", "Sulfate", "Aluminum", "Iron", "Manganese", "Specific conductance",
 ]
 
+# Kentucky county FIPS codes in the two coal fields: where AMD-polluted creeks are.
+# (Some edge counties are only partly in a coal field; we include them and let
+# the chemistry tell us which creeks are acidic.)
+KY_EAST_COAL = [
+    "013", "019", "025", "043", "051", "063", "065", "071", "089", "095", "109", "115",
+    "119", "121", "125", "127", "129", "131", "133", "147", "153", "159", "165", "175",
+    "189", "193", "195", "197", "199", "203", "205", "231", "235", "237",
+]
+KY_WEST_COAL = [
+    "031", "033", "047", "055", "059", "061", "085", "091", "101", "107", "149", "177",
+    "183", "225", "233",
+]
+
 
 def wqp_post(endpoint: str, query: dict, retries: int = 3) -> pd.DataFrame:
     """POST a query to WQP and return the CSV result as a DataFrame."""
@@ -85,6 +98,14 @@ def main() -> int:
     for i, batch in enumerate(chunks(site_ids, 200)):
         q = {"siteid": batch, "characteristicName": CHEMISTRY_NAMES}
         cached(f"chem_results_{i:03d}", lambda q=q: wqp_post("Result", q))
+
+    print("Step 3: KY coal-field chemistry at ALL sites (the prediction set)")
+    for field, counties in (("east", KY_EAST_COAL), ("west", KY_WEST_COAL)):
+        for county in counties:
+            q = {"countycode": [f"US:21:{county}"], "characteristicName": CHEMISTRY_NAMES,
+                 "sampleMedia": ["Water"]}
+            cached(f"ky_chem_{field}_{county}", lambda q=q: wqp_post("Result", q))
+            cached(f"ky_sites_{field}_{county}", lambda q=q: wqp_post("Station", q))
     print("Done.")
     return 0
 

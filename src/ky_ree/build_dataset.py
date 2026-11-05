@@ -110,9 +110,10 @@ def site_ree_summary(ree: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
-def site_chemistry() -> pd.DataFrame:
-    c = read_all("chem_results_*.csv")
+def site_chemistry(pattern: str = "chem_results_*.csv") -> pd.DataFrame:
+    c = read_all(pattern)
     c = c[(c["ActivityMediaName"] == "Water") & c["CharacteristicName"].isin(CHEM)]
+    dates = pd.to_datetime(c["ActivityStartDate"], errors="coerce")
     value = pd.to_numeric(c["ResultMeasureValue"], errors="coerce")
     unit = c["ResultMeasure/MeasureUnitCode"]
     cols = {}
@@ -127,11 +128,15 @@ def site_chemistry() -> pd.DataFrame:
         df = pd.DataFrame({"site_id": c.loc[mask, "MonitoringLocationIdentifier"], "v": v}).dropna()
         cols[col] = df.groupby("site_id")["v"].median()
         cols[f"{col}_n"] = df.groupby("site_id").size()
-    return pd.DataFrame(cols)
+    out = pd.DataFrame(cols)
+    by_site = dates.groupby(c["MonitoringLocationIdentifier"])
+    out["first_year"] = by_site.min().dt.year
+    out["last_year"] = by_site.max().dt.year
+    return out
 
 
-def site_info() -> pd.DataFrame:
-    s = read_all("ree_sites_*.csv").drop_duplicates("MonitoringLocationIdentifier")
+def site_info(pattern: str = "ree_sites_*.csv") -> pd.DataFrame:
+    s = read_all(pattern).drop_duplicates("MonitoringLocationIdentifier")
     s = s[list(SITE_COLS)].rename(columns=SITE_COLS).set_index("site_id")
     s["state"] = s["state_fips"].str.zfill(2).map(STATE_FROM_FIPS)
     s["lat"] = pd.to_numeric(s["lat"], errors="coerce")
@@ -155,7 +160,40 @@ def main() -> int:
     print(f"  ...with >=1 detected REE: {(sites['n_ree_detected'] > 0).sum():,}")
     print(f"  ...and pH + sulfate too:  {((sites['n_ree_detected'] > 0) & sites['ph'].notna() & sites['sulfate_mg_l'].notna()).sum():,}")
     print(f"  Wrote {out.relative_to(config.ROOT)}")
+
+    if glob.glob(str(RAW / "ky_chem_*.csv")):
+        build_ky_prediction_set()
     return 0
+
+
+def build_ky_prediction_set() -> None:
+    """Every sampled water site in the KY coal fields, with median chemistry.
+
+    These are the creeks the model will score. Sites that also have REE
+    measurements keep them, so we can check predictions against reality.
+    """
+    info = site_info("ky_sites_*.csv")
+    field = {}
+    for f in glob.glob(str(RAW / "ky_sites_*.csv")):
+        name = f.replace("\\", "/").split("/")[-1]  # ky_sites_east_119.csv
+        ids = pd.read_csv(f, dtype=str, usecols=["MonitoringLocationIdentifier"])["MonitoringLocationIdentifier"]
+        field.update(dict.fromkeys(ids, name.split("_")[2]))
+    info["coal_field"] = info.index.map(field)
+
+    ky = info.join(site_chemistry("ky_chem_*.csv"), how="inner")
+    known_ree = pd.read_csv(config.PROCESSED_DIR / "sites.csv", index_col="site_id")
+    ree_cols = [c for c in known_ree.columns if c.endswith("_ug_l") and c.split("_")[0] in SYMBOL.values()]
+    ky = ky.join(known_ree[ree_cols + ["n_ree_detected"]], how="left")
+    ky.index.name = "site_id"
+
+    out = config.PROCESSED_DIR / "ky_sites.csv"
+    ky.to_csv(out)
+    acidic = ky["ph"] < 5.5
+    print(f"  KY coal-field sites with chemistry: {len(ky):,} "
+          f"(east {(ky['coal_field'] == 'east').sum():,}, west {(ky['coal_field'] == 'west').sum():,})")
+    print(f"  ...with pH: {ky['ph'].notna().sum():,}; acidic (median pH < 5.5): {acidic.sum():,}")
+    print(f"  ...that already have a detected REE: {(ky['n_ree_detected'] > 0).sum():,}")
+    print(f"  Wrote {out.relative_to(config.ROOT)}")
 
 
 if __name__ == "__main__":

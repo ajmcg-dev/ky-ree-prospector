@@ -33,7 +33,14 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
   - Training sites are 375/383 PA (mostly mine discharges) → domain shift to KY must be tested
   - KY: 11 sites with detected REE, mostly Knott/Floyd Co. streams (EPA Region 4, 2013; Y 3–15 µg/L) but no pH/sulfate in WQP for them
   - Check: Red River site with Y 18.6 µg/L at pH 8.0 looks unusual, verify
-- [ ] Pull KY coal-field water chemistry at ALL sites (the prediction set), not just REE sites
+- [x] Pull KY coal-field water chemistry at ALL sites (49 counties) → `data/processed/ky_sites.csv`
+  - 3,760 sites (east 2,469, west 1,291); 2,879 with pH; 187 acidic (median pH < 5.5)
+  - Acidic hotspots: McCreary (49), Pulaski (25), Hopkins (20, western KY), Bell (13)
+  - Most extreme: Copperas Creek, Hopkins Co., pH 2.7, sulfate ~2,700 mg/L, Al ~150,000 µg/L, but last sampled 1965–67
+  - 81 of 187 acidic sites were last sampled before 1990; conditions may have changed (reclamation). Weight recency, and field-check old hotspots
+  - 46 acidic sites are wells (groundwater); the "creeks" ranking should filter to surface water
+  - Knott Co. REE sites (Y up to 15 µg/L) have sulfate but no pH → model must handle missing features
+  - Feature gaps on acidic sites: sulfate 87/187, Al 94/187 → use a model that tolerates missing values (e.g. HistGradientBoosting)
 - [ ] USGS 2024 release + EPA Shamokin (extra PA sites with solids data)
 - [ ] KY 303(d) impaired streams (AMD-related causes)
 - [ ] Abandoned mine land features (OSMRE e-AMLIS)
