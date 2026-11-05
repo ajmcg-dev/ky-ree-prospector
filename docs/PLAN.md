@@ -10,9 +10,10 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [ ] Learn: `git status`, `git add`, `git commit`, `git push`
 
 ## Phase 1: LLM literature miner (weeks 2–3)
-- [ ] Collect ~20–40 public reports/papers (USGS, EPA, KGS, UKy, DOE/NETL) into `data/raw/papers/`
-- [ ] Define the extraction schema (site, lat/lon, state, sample type, element, value, units, source, page)
-- [ ] Claude API extraction with structured output
+- [ ] Collect ~20–40 public reports/papers (USGS, EPA, KGS, UKy, DOE/NETL) into `data/raw/papers/`. 5 so far (`data/papers_manifest.csv`)
+- [x] Define the extraction schema (`src/ky_ree/schema.py`)
+- [x] Claude API extraction with structured output (`src/ky_ree/extract.py`), first test on vass2019_part2: $0.46, values spot-checked against PDF
+- [ ] Finding: vass2019_part2 has only basin-level averages, no individual sites, no KY sites. Need site-level and KY sources.
 - [ ] Hand-check a sample and report extraction accuracy
 - [ ] Budget: keep total API spend under ~$20
 

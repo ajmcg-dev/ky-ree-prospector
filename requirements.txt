@@ -3,6 +3,7 @@ pandas
 numpy
 requests
 python-dotenv
+pypdf
 
 # Geospatial
 geopandas
