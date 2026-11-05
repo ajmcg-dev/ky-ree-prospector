@@ -81,10 +81,11 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
   - Other recent: Cypress Creek & Beech Creek (Muhlenberg, 2009–13), Harlan 3MAR10026 (2009), Knott/Floyd FMB, SAB, RFBC (2013–14)
 
 ## Phase 4: Dashboard (weeks 7–8)
-- [ ] Streamlit + Folium map of ranked creeks
-- [ ] Site detail panel (score, drivers, nearby mines)
+- [x] Streamlit + Folium map of ranked creeks (`app/streamlit_app.py`), tested in browser
+- [x] Site popups: tier, probability, predicted Y, plain-language SHAP reason, chemistry, % basin mined, staleness
+- [x] Mined-out areas layer (Pike & Floyd), field shortlist tab with CSV download, model tab, limitations tab
 - [ ] "Ask the reports" assistant over Phase 1 data
-- [ ] Deploy to Streamlit Community Cloud
+- [ ] Deploy to Streamlit Community Cloud (needs your GitHub sign-in at share.streamlit.io)
 
 ## Phase 5: Field validation (weeks 8–11)
 - [ ] Choose ~3 top-ranked + ~2 low-ranked control creeks with public access or written permission
