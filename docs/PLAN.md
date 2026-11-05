@@ -26,8 +26,15 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [ ] Budget: keep total API spend under ~$20
 
 ## Phase 2: Data pipeline (weeks 3–5)
-- [ ] Pennsylvania REE data (USGS 2024 release, EPA Shamokin) → harmonized table
-- [ ] Water Quality Portal pull for the Eastern KY Coal Field (pH, SO4, Al, Fe, Mn, conductivity, REEs)
+- [x] Water Quality Portal: REE results for KY, PA, WV, VA, OH, TN + chemistry at those sites (`wqp.py`)
+- [x] Clean one-row-per-site table (`build_dataset.py` → `data/processed/sites.csv`)
+  - 17,336 REE water results (9,960 detected) at 1,791 sites; 383 sites have detected REE + pH + sulfate
+  - Sanity check: Spearman(REE, pH) = −0.86 to −0.88; median Y 22 µg/L at pH<5 vs 0.08 at pH≥6.5 (matches literature)
+  - Training sites are 375/383 PA (mostly mine discharges) → domain shift to KY must be tested
+  - KY: 11 sites with detected REE, mostly Knott/Floyd Co. streams (EPA Region 4, 2013; Y 3–15 µg/L) but no pH/sulfate in WQP for them
+  - Check: Red River site with Y 18.6 µg/L at pH 8.0 looks unusual, verify
+- [ ] Pull KY coal-field water chemistry at ALL sites (the prediction set), not just REE sites
+- [ ] USGS 2024 release + EPA Shamokin (extra PA sites with solids data)
 - [ ] KY 303(d) impaired streams (AMD-related causes)
 - [ ] Abandoned mine land features (OSMRE e-AMLIS)
 - [ ] Coal seam / geology layers (KGS)
