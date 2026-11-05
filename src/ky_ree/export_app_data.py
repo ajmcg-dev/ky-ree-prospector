@@ -76,6 +76,12 @@ def main() -> int:
         out = APP_DATA / f.replace("\\", "/").split("/")[-1]
         mines.to_file(out, driver="GeoJSON", COORDINATE_PRECISION=5)
         print(f"  {out.name}: {len(mines):,} mines, {out.stat().st_size / 1e6:.1f} MB")
+        # A plain table (one point per mine) for the chat's find_mines tool.
+        pts = mines.to_crs(5070).representative_point().to_crs(4326)
+        table = mines.drop(columns="geometry").assign(lat=pts.y.round(5), lon=pts.x.round(5))
+        table_out = out.with_suffix(".csv")
+        table.to_csv(table_out, index=False)
+        print(f"  {table_out.name}: mine table for the chat")
 
     shutil.copy(config.ROOT / "reports" / "metrics.json", APP_DATA / "metrics.json")
 

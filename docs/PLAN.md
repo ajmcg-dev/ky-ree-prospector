@@ -87,6 +87,10 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [x] "Ask the reports" chat (`app/chat.py`): Claude answers only from the extracted report data, cites paper/page/table
   - Cost guards: access code, 10 questions/session, 100/day, prompt caching (first question ~$0.25, follow-ups ~$0.02)
   - Tested: cited answers with unit conversions; declines out-of-scope questions (e.g. gold) instead of guessing
+- [x] Chat tool use (`app/site_tools.py`): find_sites, county_summary, find_mines over the project's own results
+  - Agentic loop with streaming; strict schemas; invalid tool input returns an error Claude can correct
+  - Test "REEs near Elkhorn City?": Claude made 3 tool calls, found 10 nearby sites (all unlikely, pH 7.4–8.5),
+    named the largest nearby mine, and flagged caveats (Virginia watershed coverage, old data, sediment). ~$0.32
 - [x] Deployed: https://ky-ree-prospector.streamlit.app/ (auto-redeploys on push to main; repo made public)
 
 ## Phase 5: Field validation (weeks 8–11)
