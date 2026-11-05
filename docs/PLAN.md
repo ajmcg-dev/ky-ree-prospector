@@ -6,7 +6,7 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
 - [x] Repo structure, README, .gitignore, requirements
 - [x] Virtual environment working, `python -m ky_ree.check_setup` passes
 - [x] First commit
-- [ ] Push to GitHub
+- [x] Push to GitHub
 - [ ] Learn: `git status`, `git add`, `git commit`, `git push`
 
 ## Phase 1: LLM literature miner (weeks 2–3)
