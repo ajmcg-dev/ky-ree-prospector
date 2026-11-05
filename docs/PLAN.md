@@ -42,6 +42,19 @@ Timeline: ~10–12 weeks. Check items off as you go; this file doubles as a prog
   - Knott Co. REE sites (Y up to 15 µg/L) have sulfate but no pH → model must handle missing features
   - Feature gaps on acidic sites: sulfate 87/187, Al 94/187 → use a model that tolerates missing values (e.g. HistGradientBoosting)
 - [ ] USGS 2024 release + EPA Shamokin (extra PA sites with solids data)
+- [x] Mine footprints, Pike + Floyd (`mines.py`, KY Mine Mapping Information System ArcGIS services)
+  - 13,481 polygons merged into 2,243 mines (one per state file number), 300,000 acres mined out, 88% underground
+  - Largest: Stone mine (Eastern Coal Co., Pike, Pond Creek seam), 19,600 acres. Table: `reports/largest_mines_pike_floyd.csv`
+  - Caveat: tax-year records start ~1989, so "first_year" is not when mining began
+- [x] Upstream mining per site (`upstream.py`, USGS NLDI basins): 382/382 Pike + Floyd creek sites
+  - Median 29% of watershed mined (sites with ≥90% coverage); up to 94% (Mudlick Branch, below Stone mine)
+  - 170 basins extend beyond our mine data (other counties / WV / VA) → `pct_basin_covered` column
+- **Finding:** Pike/Floyd creeks are heavily mined but NOT acidic (pH 6.1–8.8, median 7.7) with high sulfate
+  → alkaline/neutral mine drainage. % mined does not predict dissolved REE here (Spearman −0.30 with predicted Y).
+  Hypothesis: REEs released by mining settle into stream-bed sediment/ochre at neutral pH (cf. Stewart et al. 2017,
+  REE drop above pH ~6.6). Test with sediment samples below big mines (e.g. Mudlick Branch, Blackberry Creek, Pond Creek).
+- [ ] Extend mines + upstream to other coal counties (Knott, Letcher, Perry, Harlan, McCreary); add MSHA/EIA tonnage via FEDERAL_ID
+- [ ] To use % mined as a model feature, training sites (PA) need the same feature from PA mine maps
 - [ ] KY 303(d) impaired streams (AMD-related causes)
 - [ ] Abandoned mine land features (OSMRE e-AMLIS)
 - [ ] Coal seam / geology layers (KGS)
